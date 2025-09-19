@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Crop Vision</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f6f8fb; --card: #ffffff; --accent: #2b8aef;
+      --muted: #6b7280; --radius: 12px;
+    }
+    body {
+      font-family: Inter, ui-sans-serif; 
+      background: linear-gradient(180deg,#eef6ff 0%,var(--bg) 100%);
+      margin: 0; padding: 40px; color: #0f172a;
+    }
+    .container { max-width: 920px; margin: 0 auto; text-align: center }
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: 0 8px 30px rgba(15,23,42,0.06); padding: 26px; margin-top: 40px }
+    h1 { margin: 0 0 6px; font-size: 22px }
+    p.lead { margin: 0 0 18px; color: var(--muted) }
+    form { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-top: 14px; text-align: left }
+    label { display: block; font-size: 13px; margin-bottom: 6px; color: var(--muted) }
+    select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e6eef8; background: #fff; font-size: 14px }
+    .full { grid-column: 1/-1 }
+    .actions { display: flex; gap: 12px; align-items: center; margin-top: 12px; justify-content: center }
+    button { background: var(--accent); border: none; color: #fff; padding: 10px 14px; border-radius: 10px; font-weight: 600; cursor: pointer }
+    button.secondary { background: #eef2ff; color: var(--accent); border: 1px solid rgba(43,138,239,0.12) }
+    .result { margin-top: 18px; padding: 16px; border-radius: 10px; background: #f8fafc; border: 1px dashed #e6eef8; text-align: left }
+    .muted-small { font-size: 13px; color: var(--muted) }
+    .hidden { display: none }
+    .crop-item { padding: 4px 0; border-bottom: 1px solid #e6eef8 }
+    .big-btn { font-size: 18px; padding: 14px 20px; min-width: 140px }
+    .back-btn { margin-top: 20px; background: #e5e7eb; color: #374151 }
+    @media(max-width:720px){ form{ grid-template-columns: 1fr } .container{ padding: 0 18px } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>AI Crop Vision</h1>
+      <p class="lead">Predict crop success or get crop suggestions based on conditions.</p>
+
+      <!-- Initial Screen -->
+      <div id="initial-screen">
+        <div class="actions">
+          <button id="choose-predict" class="big-btn">Predict</button>
+          <button id="choose-suggest" class="big-btn secondary">Suggest</button>
+        </div>
+      </div>
+
+      <!-- Predict Form -->
+      <div id="predict-section" class="hidden">
+        <form id="predict-form">
+          <div><label>Crop</label>
+            <select id="crop">
+              <option>Banana</option><option>Bajra</option><option>Barley</option><option>Coffee</option><option>Cotton</option><option>Groundnut</option><option>Jute</option><option>Maize</option><option>Mustard</option><option>Onion</option><option>Potato</option><option>Pulses</option><option>Rice</option><option>Sugarcane</option><option>Sunflower</option><option>Sorghum</option><option>Soybean</option><option>Tea</option><option>Tomato</option><option>Wheat</option>
+            </select>
+          </div>
+          <div><label>Season</label>
+            <select id="season1"><option>Kharif</option><option>Rabi</option><option>Summer</option><option>Winter</option><option>Autumn</option></select>
+          </div>
+          <div><label>Soil</label>
+            <select id="soil1"><option>Clay</option><option>Loamy</option><option>Red</option><option>Sandy</option><option>Black</option></select>
+          </div>
+          <div><label>Rainfall</label>
+            <select id="rainfall1"><option>Low</option><option>Moderate</option><option>Heavy</option></select>
+          </div>
+          <div class="full actions"><button type="button" id="predict-btn">Predict</button></div>
+        </form>
+        <div id="predict-result" class="result">
+          <strong>Prediction Result:</strong>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+            <div id="result-value" style="font-size:18px;min-width:180px">—</div>
+            <div style="width:70px;height:70px;"><canvas id="successChart"></canvas></div>
+          </div>
+          <div id="precaution" class="muted-small" style="margin-top:8px"></div>
+          <div id="irrigation" class="muted-small"></div>
+          <div id="fertilization" class="muted-small"></div>
+          <div id="pestcontrol" class="muted-small"></div>
+          <div id="suggestion" class="muted-small" style="margin-top:8px;display:none;font-weight:600;color:#b91c1c"></div>
+        </div>
+        <button class="back-btn" id="back1">Back</button>
+      </div>
+
+      <!-- Suggest Form -->
+      <div id="suggest-section" class="hidden">
+        <form id="suggest-form">
+          <div><label>Season</label><select id="season2"><option>Kharif</option><option>Rabi</option><option>Summer</option><option>Winter</option><option>Autumn</option></select></div>
+          <div><label>Soil</label><select id="soil2"><option>Clay</option><option>Loamy</option><option>Red</option><option>Sandy</option><option>Black</option></select></div>
+          <div><label>Rainfall</label><select id="rainfall2"><option>Low</option><option>Moderate</option><option>Heavy</option></select></div>
+          <div><label>Success %</label><select id="percentage"><option value="30">Greater than 30%</option><option value="40">Greater than 40%</option><option value="50">Greater than 50%</option><option value="60">Greater than 60%</option><option value="70">Greater than 70%</option><option value="80">Greater than 80%</option><option value="90">Greater than 90%</option></select></div>
+          <div class="full actions"><button type="button" id="suggest-btn">Suggest</button></div>
+        </form>
+        <div id="suggest-result" class="result"><strong>Suggested Crops:</strong><div id="crop-list" style="margin-top:8px"></div></div>
+        <button class="back-btn" id="back2">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let dataset = [], successChart = null;
+
+    const initialScreen = document.getElementById('initial-screen');
+    const predictSection = document.getElementById('predict-section');
+    const suggestSection = document.getElementById('suggest-section');
+    const resultValue = document.getElementById('result-value');
+    const precautionEl = document.getElementById('precaution');
+    const irrigationEl = document.getElementById('irrigation');
+    const fertilizationEl = document.getElementById('fertilization');
+    const pestEl = document.getElementById('pestcontrol');
+    const suggestionEl = document.getElementById('suggestion');
+    const cropListEl = document.getElementById('crop-list');
+
+    document.getElementById('choose-predict').onclick = () => { initialScreen.classList.add('hidden'); predictSection.classList.remove('hidden'); }
+    document.getElementById('choose-suggest').onclick = () => { initialScreen.classList.add('hidden'); suggestSection.classList.remove('hidden'); }
+    document.getElementById('back1').onclick = () => { predictSection.classList.add('hidden'); initialScreen.classList.remove('hidden'); }
+    document.getElementById('back2').onclick = () => { suggestSection.classList.add('hidden'); initialScreen.classList.remove('hidden'); }
+
+    // Load dataset
+    fetch("final_unique_dataset.json")
+      .then(res => res.json())
+      .then(data => dataset = data);
+
+    document.getElementById('predict-btn').onclick = () => {
+      const crop = document.getElementById('crop').value.toLowerCase();
+      const season = document.getElementById('season1').value.toLowerCase();
+      const soil = document.getElementById('soil1').value.toLowerCase();
+      const rainfall = document.getElementById('rainfall1').value.toLowerCase();
+
+      const match = dataset.find(d =>
+        d.Crop.toLowerCase() === crop &&
+        d.Season.toLowerCase() === season &&
+        d.Soil.toLowerCase() === soil &&
+        d.Rainfall.toLowerCase() === rainfall
+      );
+
+      if (match) {
+        const percentage = parseInt(match.Percentage);
+        resultValue.textContent = `Success likelihood: ${percentage}%`;
+        precautionEl.textContent = "PRECAUTION: " + match.Precaution;
+        irrigationEl.textContent = "IRRIGATION: " + match.Irrigation;
+        fertilizationEl.textContent = "FERTILIZATION: " + match.Fertilization;
+        pestEl.textContent = "PEST CONTROL: " + match.PestControl;
+        suggestionEl.style.display = percentage < 30 ? "block" : "none";
+
+        const data = { labels: ['Success','Failure'], datasets: [{ data: [percentage, 100 - percentage], backgroundColor: ['#2b8aef', '#e6eef8'], borderWidth: 0 }] };
+        if (successChart) successChart.destroy();
+        successChart = new Chart(document.getElementById('successChart'), { type: 'pie', data, options: { plugins: { legend: { display: false } } } });
+      } else {
+        resultValue.textContent = "No data found.";
+        precautionEl.textContent = irrigationEl.textContent = fertilizationEl.textContent = pestEl.textContent = "";
+        suggestionEl.style.display = "none";
+        if (successChart) successChart.destroy();
+      }
+    };
+
+    document.getElementById('suggest-btn').onclick = () => {
+      const season = document.getElementById('season2').value.toLowerCase();
+      const soil = document.getElementById('soil2').value.toLowerCase();
+      const rainfall = document.getElementById('rainfall2').value.toLowerCase();
+      const minP = parseInt(document.getElementById('percentage').value);
+
+      const matches = dataset.filter(d =>
+        d.Season.toLowerCase() === season &&
+        d.Soil.toLowerCase() === soil &&
+        d.Rainfall.toLowerCase() === rainfall &&
+        d.Percentage >= minP
+      );
+
+      cropListEl.innerHTML = matches.length
+        ? matches.map(m => `<div class="crop-item">${m.Crop} (${m.Percentage}%)</div>`).join("")
+        : "<div class='muted-small'>No crops found.</div>";
+    };
+  </script>
+</body>
+</html>
